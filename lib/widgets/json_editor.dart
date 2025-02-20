@@ -201,6 +201,7 @@ class _JsonEditorState extends State<JsonEditor> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Expanded(
                                 flex: 2,
@@ -224,24 +225,30 @@ class _JsonEditorState extends State<JsonEditor> {
                                 ),
                               ),
                               const SizedBox(width: 8),
-                              buildTypeSelector(
-                                  entry.value, [...path, entry.key]),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    obj.remove(entry.key);
-                                    widget.onChanged?.call(jsonData);
-                                  });
-                                },
+                              Expanded(
+                                flex: 3,
+                                child: Row(
+                                  children: [
+                                    Expanded(
+                                      child: renderValue(
+                                          entry.value, [...path, entry.key]),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    buildTypeSelector(
+                                        entry.value, [...path, entry.key]),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () {
+                                        setState(() {
+                                          obj.remove(entry.key);
+                                          widget.onChanged?.call(jsonData);
+                                        });
+                                      },
+                                    ),
+                                  ],
+                                ),
                               ),
                             ],
-                          ),
-                          const SizedBox(height: 4),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 8.0),
-                            child:
-                                renderValue(entry.value, [...path, entry.key]),
                           ),
                         ],
                       ),
@@ -273,42 +280,43 @@ class _JsonEditorState extends State<JsonEditor> {
                 .entries
                 .map((entry) => Padding(
                       padding: const EdgeInsets.symmetric(vertical: 4.0),
-                      child: Column(
+                      child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              SizedBox(
-                                width: 40,
-                                child: Text('[${entry.key}]'),
-                              ),
-                              buildTypeSelector(
-                                  entry.value, [...path, entry.key.toString()]),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    value.removeAt(entry.key);
-                                    for (var i = entry.key;
-                                        i < value.length;
-                                        i++) {
-                                      final currentPath = [
-                                        ...path,
-                                        i.toString()
-                                      ];
-                                      updateValue(currentPath, value[i]);
-                                    }
-                                    widget.onChanged?.call(jsonData);
-                                  });
-                                },
-                              ),
-                            ],
+                          SizedBox(
+                            width: 40,
+                            child: Text('[${entry.key}]'),
                           ),
-                          const SizedBox(height: 4),
-                          Padding(
-                            padding: const EdgeInsets.only(left: 48.0),
-                            child: renderValue(
-                                entry.value, [...path, entry.key.toString()]),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: renderValue(entry.value,
+                                      [...path, entry.key.toString()]),
+                                ),
+                                const SizedBox(width: 8),
+                                buildTypeSelector(entry.value,
+                                    [...path, entry.key.toString()]),
+                                IconButton(
+                                  icon: const Icon(Icons.delete),
+                                  onPressed: () {
+                                    setState(() {
+                                      value.removeAt(entry.key);
+                                      for (var i = entry.key;
+                                          i < value.length;
+                                          i++) {
+                                        final currentPath = [
+                                          ...path,
+                                          i.toString()
+                                        ];
+                                        updateValue(currentPath, value[i]);
+                                      }
+                                      widget.onChanged?.call(jsonData);
+                                    });
+                                  },
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
