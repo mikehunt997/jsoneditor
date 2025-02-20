@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:flutter/services.dart';
 
 class JsonEditor extends StatefulWidget {
   final Map<String, dynamic> initialValue;
   final ValueChanged<Map<String, dynamic>>? onChanged;
+  final bool showJsonString;
 
   const JsonEditor({
     Key? key,
     required this.initialValue,
     this.onChanged,
+    this.showJsonString = true,
   }) : super(key: key);
 
   @override
@@ -16,11 +20,35 @@ class JsonEditor extends StatefulWidget {
 
 class _JsonEditorState extends State<JsonEditor> {
   late Map<String, dynamic> jsonData;
+  final TextEditingController _jsonController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     jsonData = Map<String, dynamic>.from(widget.initialValue);
+    _updateJsonString();
+  }
+
+  @override
+  void dispose() {
+    _jsonController.dispose();
+    super.dispose();
+  }
+
+  void _updateJsonString() {
+    _jsonController.text = const JsonEncoder.withIndent('  ').convert(jsonData);
+  }
+
+  void _updateJsonFromString(String jsonString) {
+    try {
+      final newData = json.decode(jsonString) as Map<String, dynamic>;
+      setState(() {
+        jsonData = newData;
+        widget.onChanged?.call(jsonData);
+      });
+    } catch (e) {
+      print('Invalid JSON: $e');
+    }
   }
 
   void updateValue(List<String> path, dynamic newValue) {
@@ -52,6 +80,7 @@ class _JsonEditorState extends State<JsonEditor> {
       }
 
       widget.onChanged?.call(jsonData);
+      _updateJsonString();
     });
   }
 
@@ -339,11 +368,55 @@ class _JsonEditorState extends State<JsonEditor> {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: renderValue(jsonData, []),
-      ),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: renderValue(jsonData, []),
+            ),
+          ),
+        ),
+        if (widget.showJsonString) ...[
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    const Text('JSON 字符串：'),
+                    const Spacer(),
+                    TextButton.icon(
+                      icon: const Icon(Icons.copy),
+                      label: const Text('复制'),
+                      onPressed: () {
+                        Clipboard.setData(
+                            ClipboardData(text: _jsonController.text));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('已复制到剪贴板')),
+                        );
+                      },
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _jsonController,
+                  maxLines: 5,
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.all(8),
+                  ),
+                  onChanged: _updateJsonFromString,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ],
     );
   }
 }
