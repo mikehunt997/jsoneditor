@@ -19,13 +19,15 @@ jobs:
       - name: Setup Flutter
         run: |
           git clone https://github.com/flutter/flutter.git
-          export PATH="$PATH:`pwd`/flutter/bin"
+          echo "$GITHUB_WORKSPACE/flutter/bin" >> $GITHUB_PATH
+          export PATH="$GITHUB_WORKSPACE/flutter/bin:$PATH"
           flutter channel stable
           flutter upgrade
           flutter doctor
 
       - name: Build
         run: |
+          export PATH="$GITHUB_WORKSPACE/flutter/bin:$PATH"
           flutter pub get
           flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
