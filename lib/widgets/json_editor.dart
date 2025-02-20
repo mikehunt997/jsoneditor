@@ -25,13 +25,91 @@ class _JsonEditorState extends State<JsonEditor> {
 
   void updateValue(List<String> path, dynamic newValue) {
     setState(() {
-      var current = jsonData;
+      dynamic current = jsonData;
       for (var i = 0; i < path.length - 1; i++) {
-        current = current[path[i]];
+        if (current is List) {
+          final index = int.tryParse(path[i]);
+          if (index != null && index >= 0 && index < current.length) {
+            current = current[index];
+          } else {
+            return;
+          }
+        } else if (current is Map) {
+          current = current[path[i]];
+        } else {
+          return;
+        }
       }
-      current[path.last] = newValue;
+
+      final lastKey = path.last;
+      if (current is List) {
+        final index = int.tryParse(lastKey);
+        if (index != null && index >= 0 && index < current.length) {
+          current[index] = newValue;
+        }
+      } else if (current is Map<String, dynamic>) {
+        current[lastKey] = newValue;
+      }
+
       widget.onChanged?.call(jsonData);
     });
+  }
+
+  dynamic convertValueType(dynamic value, String newType) {
+    switch (newType) {
+      case 'string':
+        return value?.toString() ?? '';
+      case 'number':
+        if (value is String) {
+          return num.tryParse(value) ?? 0;
+        }
+        return value is num ? value : 0;
+      case 'boolean':
+        if (value is String) {
+          return value.toLowerCase() == 'true';
+        }
+        return value is bool ? value : false;
+      case 'array':
+        return [];
+      case 'object':
+        return <String, dynamic>{};
+      case 'null':
+        return null;
+      default:
+        return value;
+    }
+  }
+
+  Widget buildTypeSelector(dynamic value, List<String> path) {
+    String currentType = 'string';
+    if (value == null) {
+      currentType = 'null';
+    } else if (value is num) {
+      currentType = 'number';
+    } else if (value is bool) {
+      currentType = 'boolean';
+    } else if (value is List) {
+      currentType = 'array';
+    } else if (value is Map) {
+      currentType = 'object';
+    }
+
+    return DropdownButton<String>(
+      value: currentType,
+      items: const [
+        DropdownMenuItem(value: 'string', child: Text('字符串')),
+        DropdownMenuItem(value: 'number', child: Text('数字')),
+        DropdownMenuItem(value: 'boolean', child: Text('布尔')),
+        DropdownMenuItem(value: 'array', child: Text('数组')),
+        DropdownMenuItem(value: 'object', child: Text('对象')),
+        DropdownMenuItem(value: 'null', child: Text('空值')),
+      ],
+      onChanged: (newType) {
+        if (newType != null && newType != currentType) {
+          updateValue(path, convertValueType(value, newType));
+        }
+      },
+    );
   }
 
   Widget renderValue(dynamic value, List<String> path) {
@@ -116,48 +194,59 @@ class _JsonEditorState extends State<JsonEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...obj.entries.map((entry) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: TextFormField(
-                      initialValue: entry.key,
-                      decoration: const InputDecoration(
-                        labelText: '键',
-                        border: OutlineInputBorder(),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            ...obj.entries
+                .map((entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  initialValue: entry.key,
+                                  decoration: const InputDecoration(
+                                    labelText: '键',
+                                    border: OutlineInputBorder(),
+                                    contentPadding: EdgeInsets.symmetric(
+                                        horizontal: 8, vertical: 4),
+                                  ),
+                                  onChanged: (newKey) {
+                                    if (newKey != entry.key) {
+                                      setState(() {
+                                        final value = obj.remove(entry.key);
+                                        obj[newKey] = value;
+                                        widget.onChanged?.call(jsonData);
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              buildTypeSelector(
+                                  entry.value, [...path, entry.key]),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    obj.remove(entry.key);
+                                    widget.onChanged?.call(jsonData);
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 8.0),
+                            child:
+                                renderValue(entry.value, [...path, entry.key]),
+                          ),
+                        ],
                       ),
-                      onChanged: (newKey) {
-                        if (newKey != entry.key) {
-                          setState(() {
-                            final value = obj.remove(entry.key);
-                            obj[newKey] = value;
-                            widget.onChanged?.call(jsonData);
-                          });
-                        }
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    flex: 3,
-                    child: renderValue(entry.value, [...path, entry.key]),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        obj.remove(entry.key);
-                        widget.onChanged?.call(jsonData);
-                      });
-                    },
-                  ),
-                ],
-              ),
-            )).toList(),
+                    ))
+                .toList(),
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -179,30 +268,52 @@ class _JsonEditorState extends State<JsonEditor> {
         padding: const EdgeInsets.all(8.0),
         child: Column(
           children: [
-            ...value.asMap().entries.map((entry) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 4.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: 40,
-                    child: Text('[${entry.key}]'),
-                  ),
-                  Expanded(
-                    child: renderValue(entry.value, [...path, entry.key.toString()]),
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () {
-                      setState(() {
-                        value.removeAt(entry.key);
-                        widget.onChanged?.call(jsonData);
-                      });
-                    },
-                  ),
-                ],
-              ),
-            )).toList(),
+            ...value
+                .asMap()
+                .entries
+                .map((entry) => Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 4.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              SizedBox(
+                                width: 40,
+                                child: Text('[${entry.key}]'),
+                              ),
+                              buildTypeSelector(
+                                  entry.value, [...path, entry.key.toString()]),
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  setState(() {
+                                    value.removeAt(entry.key);
+                                    for (var i = entry.key;
+                                        i < value.length;
+                                        i++) {
+                                      final currentPath = [
+                                        ...path,
+                                        i.toString()
+                                      ];
+                                      updateValue(currentPath, value[i]);
+                                    }
+                                    widget.onChanged?.call(jsonData);
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 48.0),
+                            child: renderValue(
+                                entry.value, [...path, entry.key.toString()]),
+                          ),
+                        ],
+                      ),
+                    ))
+                .toList(),
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -227,4 +338,4 @@ class _JsonEditorState extends State<JsonEditor> {
       ),
     );
   }
-} 
+}

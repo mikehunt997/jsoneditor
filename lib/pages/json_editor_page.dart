@@ -10,14 +10,11 @@ class JsonEditorPage extends StatefulWidget {
 
 class _JsonEditorPageState extends State<JsonEditorPage> {
   final Map<String, dynamic> sampleJson = {
-    "name": "张三",
-    "age": 25,
-    "isStudent": true,
-    "hobbies": ["读书", "游戏", "运动"],
-    "address": {
-      "city": "北京",
-      "street": "朝阳区"
-    }
+    // "name": "张三",
+    // "age": 25,
+    // "isStudent": true,
+    // "hobbies": ["读书", "游戏", "运动"],
+    // "address": {"city": "北京", "street": "朝阳区"}
   };
 
   @override
@@ -34,4 +31,4 @@ class _JsonEditorPageState extends State<JsonEditorPage> {
       ),
     );
   }
-} 
+}
