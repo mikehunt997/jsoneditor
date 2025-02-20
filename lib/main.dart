@@ -1,18 +1,9 @@
-import 'package:demo/dest4/memory_screen.dart';
 import 'package:demo/pages/json_editor_page.dart';
 
-import 'test3.dart';
-import 'test3/memory_layout.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-
-import 'test.dart';
-import 'test1/character_creation_screen.dart';
-import 'test2.dart';
-import 'test2/character_creation_layout.dart';
-import 'test5/chat_layout.dart';
 
 void main() {
   runApp(const MyApp());
