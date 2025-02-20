@@ -27,10 +27,17 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   Locale _locale = const Locale('zh');
+  bool _isDarkMode = false;
 
   void setLocale(Locale locale) {
     setState(() {
       _locale = locale;
+    });
+  }
+
+  void toggleTheme() {
+    setState(() {
+      _isDarkMode = !_isDarkMode;
     });
   }
 
@@ -43,7 +50,25 @@ class _MyAppState extends State<MyApp> {
         theme: ThemeData(
           fontFamily: 'SF Pro Display',
           scaffoldBackgroundColor: Colors.white,
+          brightness: Brightness.light,
+          appBarTheme: const AppBarTheme(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+          ),
         ),
+        darkTheme: ThemeData(
+          fontFamily: 'SF Pro Display',
+          scaffoldBackgroundColor: Colors.grey[900],
+          brightness: Brightness.dark,
+          appBarTheme: AppBarTheme(
+            backgroundColor: Colors.grey[800],
+            foregroundColor: Colors.white,
+          ),
+          cardTheme: CardTheme(
+            color: Colors.grey[800],
+          ),
+        ),
+        themeMode: _isDarkMode ? ThemeMode.dark : ThemeMode.light,
         locale: _locale,
         localizationsDelegates: const [
           AppLocalizations.delegate,
@@ -55,6 +80,8 @@ class _MyAppState extends State<MyApp> {
         home: JsonEditorPage(
           onLocaleChange: setLocale,
           currentLocale: _locale,
+          isDarkMode: _isDarkMode,
+          onThemeToggle: toggleTheme,
         ),
       ),
     );

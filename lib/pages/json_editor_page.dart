@@ -3,13 +3,17 @@ import '../widgets/json_editor.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class JsonEditorPage extends StatefulWidget {
-  final Function(Locale) onLocaleChange; // 添加语言切换回调
+  final Function(Locale) onLocaleChange;
   final Locale currentLocale;
+  final bool isDarkMode; // 添加主题状态
+  final VoidCallback onThemeToggle; // 添加主题切换回调
 
   const JsonEditorPage({
     Key? key,
     required this.onLocaleChange,
     required this.currentLocale,
+    required this.isDarkMode,
+    required this.onThemeToggle,
   }) : super(key: key);
 
   @override
@@ -33,7 +37,17 @@ class _JsonEditorPageState extends State<JsonEditorPage> {
       appBar: AppBar(
         title: Text(l10n.jsonEditor),
         actions: [
-          // 添加语言切换按钮
+          // 添加主题切换按钮
+          IconButton(
+            icon: Icon(
+              widget.isDarkMode ? Icons.light_mode : Icons.dark_mode,
+            ),
+            onPressed: widget.onThemeToggle,
+            tooltip: widget.isDarkMode
+                ? 'Switch to Light Mode'
+                : 'Switch to Dark Mode',
+          ),
+          // 语言切换按钮
           PopupMenuButton<String>(
             icon: const Icon(Icons.language),
             onSelected: (String value) {
