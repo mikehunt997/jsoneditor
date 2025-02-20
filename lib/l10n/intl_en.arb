@@ -1,0 +1,15 @@
+{
+    "jsonEditor": "JSON Editor",
+    "addField": "Add Field",
+    "addItem": "Add Item",
+    "copy": "Copy",
+    "jsonString": "JSON String",
+    "copiedToClipboard": "Copied to clipboard",
+    "key": "Key",
+    "typeString": "String",
+    "typeNumber": "Number",
+    "typeBoolean": "Boolean",
+    "typeArray": "Array",
+    "typeObject": "Object",
+    "typeNull": "Null"
+}

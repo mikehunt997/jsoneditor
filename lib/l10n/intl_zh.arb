@@ -1,0 +1,15 @@
+{
+    "jsonEditor": "JSON 编辑器",
+    "addField": "添加字段",
+    "addItem": "添加项",
+    "copy": "复制",
+    "jsonString": "JSON 字符串",
+    "copiedToClipboard": "已复制到剪贴板",
+    "key": "键",
+    "typeString": "字符串",
+    "typeNumber": "数字",
+    "typeBoolean": "布尔",
+    "typeArray": "数组",
+    "typeObject": "对象",
+    "typeNull": "空值"
+}

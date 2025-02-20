@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class JsonEditor extends StatefulWidget {
   final Map<String, dynamic> initialValue;
@@ -123,15 +124,16 @@ class _JsonEditorState extends State<JsonEditor> {
       currentType = 'object';
     }
 
+    final l10n = AppLocalizations.of(context)!;
     return DropdownButton<String>(
       value: currentType,
-      items: const [
-        DropdownMenuItem(value: 'string', child: Text('字符串')),
-        DropdownMenuItem(value: 'number', child: Text('数字')),
-        DropdownMenuItem(value: 'boolean', child: Text('布尔')),
-        DropdownMenuItem(value: 'array', child: Text('数组')),
-        DropdownMenuItem(value: 'object', child: Text('对象')),
-        DropdownMenuItem(value: 'null', child: Text('空值')),
+      items: [
+        DropdownMenuItem(value: 'string', child: Text(l10n.typeString)),
+        DropdownMenuItem(value: 'number', child: Text(l10n.typeNumber)),
+        DropdownMenuItem(value: 'boolean', child: Text(l10n.typeBoolean)),
+        DropdownMenuItem(value: 'array', child: Text(l10n.typeArray)),
+        DropdownMenuItem(value: 'object', child: Text(l10n.typeObject)),
+        DropdownMenuItem(value: 'null', child: Text(l10n.typeNull)),
       ],
       onChanged: (newType) {
         if (newType != null && newType != currentType) {
@@ -257,10 +259,10 @@ class _JsonEditorState extends State<JsonEditor> {
                           child: TextFormField(
                             controller: controller,
                             focusNode: focusNode,
-                            decoration: const InputDecoration(
-                              labelText: '键',
-                              border: OutlineInputBorder(),
-                              contentPadding: EdgeInsets.symmetric(
+                            decoration: InputDecoration(
+                              labelText: AppLocalizations.of(context)!.key,
+                              border: const OutlineInputBorder(),
+                              contentPadding: const EdgeInsets.symmetric(
                                   horizontal: 8, vertical: 4),
                             ),
                             onFieldSubmitted: updateKey,
@@ -303,7 +305,7 @@ class _JsonEditorState extends State<JsonEditor> {
                   widget.onChanged?.call(jsonData);
                 });
               },
-              child: const Text('添加字段'),
+              child: Text(AppLocalizations.of(context)!.addField),
             ),
           ],
         ),
@@ -371,7 +373,7 @@ class _JsonEditorState extends State<JsonEditor> {
                   widget.onChanged?.call(jsonData);
                 });
               },
-              child: const Text('添加项'),
+              child: Text(AppLocalizations.of(context)!.addItem),
             ),
           ],
         ),
@@ -400,16 +402,19 @@ class _JsonEditorState extends State<JsonEditor> {
               children: [
                 Row(
                   children: [
-                    const Text('JSON 字符串：'),
+                    Text(AppLocalizations.of(context)!.jsonString),
                     const Spacer(),
                     TextButton.icon(
                       icon: const Icon(Icons.copy),
-                      label: const Text('复制'),
+                      label: Text(AppLocalizations.of(context)!.copy),
                       onPressed: () {
                         Clipboard.setData(
                             ClipboardData(text: _jsonController.text));
                         ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('已复制到剪贴板')),
+                          SnackBar(
+                            content: Text(AppLocalizations.of(context)!
+                                .copiedToClipboard),
+                          ),
                         );
                       },
                     ),

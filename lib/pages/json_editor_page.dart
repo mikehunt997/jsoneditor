@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../widgets/json_editor.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class JsonEditorPage extends StatefulWidget {
   const JsonEditorPage({Key? key}) : super(key: key);
@@ -21,7 +22,7 @@ class _JsonEditorPageState extends State<JsonEditorPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('JSON 编辑器'),
+        title: Text(AppLocalizations.of(context)!.jsonEditor),
       ),
       body: JsonEditor(
         initialValue: sampleJson,
