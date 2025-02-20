@@ -257,7 +257,7 @@ class _JsonEditorState extends State<JsonEditor> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  obj['新字段'] = '';
+                  obj[''] = '';
                   widget.onChanged?.call(jsonData);
                 });
               },
