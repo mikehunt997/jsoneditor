@@ -1,0 +1,2 @@
+- name: flutter-build-web
+  uses: cedvdb/action-flutter-build-web@v1
