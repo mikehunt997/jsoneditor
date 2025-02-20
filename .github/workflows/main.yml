@@ -1,4 +1,4 @@
-name: Build and distribute
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -6,19 +6,28 @@ on:
       - main
 
 jobs:
-  build:
-    name: build
+  build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - uses: cedvdb/action-flutter-build-web@v1
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          build-cmd: flutter build web --release
-          working-directory: ./
+          flutter-version: '3.x'
+          channel: 'stable'
 
-      - name: Archive Production artifact
-        uses: actions/upload-artifact@v2
+      - name: Get dependencies
+        run: flutter pub get
+
+      - name: Build web
+        run: flutter build web --release --base-href "/your_repository_name/"
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: release
-          path: build/web
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          force_orphan: true
