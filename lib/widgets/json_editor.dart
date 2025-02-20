@@ -286,6 +286,7 @@ class _JsonEditorState extends State<JsonEditor> {
                                   setState(() {
                                     obj.remove(entry.key);
                                     widget.onChanged?.call(jsonData);
+                                    _updateJsonString();
                                   });
                                 },
                               ),
@@ -356,6 +357,7 @@ class _JsonEditorState extends State<JsonEditor> {
                                         updateValue(currentPath, value[i]);
                                       }
                                       widget.onChanged?.call(jsonData);
+                                      _updateJsonString();
                                     });
                                   },
                                 ),
