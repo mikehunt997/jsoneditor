@@ -3,7 +3,14 @@ import '../widgets/json_editor.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class JsonEditorPage extends StatefulWidget {
-  const JsonEditorPage({Key? key}) : super(key: key);
+  final Function(Locale) onLocaleChange; // 添加语言切换回调
+  final Locale currentLocale;
+
+  const JsonEditorPage({
+    Key? key,
+    required this.onLocaleChange,
+    required this.currentLocale,
+  }) : super(key: key);
 
   @override
   State<JsonEditorPage> createState() => _JsonEditorPageState();
@@ -20,9 +27,30 @@ class _JsonEditorPageState extends State<JsonEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Scaffold(
       appBar: AppBar(
-        title: Text(AppLocalizations.of(context)!.jsonEditor),
+        title: Text(l10n.jsonEditor),
+        actions: [
+          // 添加语言切换按钮
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.language),
+            onSelected: (String value) {
+              widget.onLocaleChange(Locale(value));
+            },
+            itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+              const PopupMenuItem<String>(
+                value: 'en',
+                child: Text('English'),
+              ),
+              const PopupMenuItem<String>(
+                value: 'zh',
+                child: Text('中文'),
+              ),
+            ],
+          ),
+        ],
       ),
       body: JsonEditor(
         initialValue: sampleJson,

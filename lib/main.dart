@@ -18,8 +18,21 @@ void main() {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  Locale _locale = const Locale('zh');
+
+  void setLocale(Locale locale) {
+    setState(() {
+      _locale = locale;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,6 +44,7 @@ class MyApp extends StatelessWidget {
           fontFamily: 'SF Pro Display',
           scaffoldBackgroundColor: Colors.white,
         ),
+        locale: _locale,
         localizationsDelegates: const [
           AppLocalizations.delegate,
           GlobalMaterialLocalizations.delegate,
@@ -38,7 +52,10 @@ class MyApp extends StatelessWidget {
           GlobalCupertinoLocalizations.delegate,
         ],
         supportedLocales: AppLocalizations.supportedLocales,
-        home: JsonEditorPage(),
+        home: JsonEditorPage(
+          onLocaleChange: setLocale,
+          currentLocale: _locale,
+        ),
       ),
     );
   }
