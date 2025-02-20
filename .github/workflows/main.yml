@@ -10,24 +10,29 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-
+      - name: Checkout repository
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git clone https://github.com/${{ github.repository }}.git .
+          
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          flutter-version: '3.x'
-          channel: 'stable'
+        run: |
+          git clone https://github.com/flutter/flutter.git
+          export PATH="$PATH:`pwd`/flutter/bin"
+          flutter channel stable
+          flutter upgrade
+          flutter doctor
 
-      - name: Get dependencies
-        run: flutter pub get
+      - name: Build
+        run: |
+          flutter pub get
+          flutter build web --release --base-href "/${{ github.event.repository.name }}/"
 
-      - name: Build web
-        run: flutter build web --release --base-href "/your_repository_name/"
-
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
-          force_orphan: true
+      - name: Deploy
+        run: |
+          cd build/web
+          git init
+          git add -A
+          git commit -m "Deploy to GitHub Pages"
+          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:gh-pages
