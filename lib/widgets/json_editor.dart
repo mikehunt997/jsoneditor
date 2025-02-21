@@ -1,7 +1,9 @@
+import 'package:demo/util/l10n.dart';
+import 'package:demo/widgets/object_key_editor.dart';
+import 'package:demo/widgets/string_editor.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class JsonEditor extends StatefulWidget {
   final Map<String, dynamic> initialValue;
@@ -24,6 +26,7 @@ class _JsonEditorState extends State<JsonEditor> {
   late List<String> _keyOrder;
   final TextEditingController _jsonController = TextEditingController();
   final FocusNode _jsonFocusNode = FocusNode();
+  var _emptyFocusNode = FocusNode();
 
   @override
   void initState() {
@@ -42,6 +45,7 @@ class _JsonEditorState extends State<JsonEditor> {
   void dispose() {
     _jsonController.dispose();
     _jsonFocusNode.dispose();
+    _emptyFocusNode.dispose();
     super.dispose();
   }
 
@@ -252,14 +256,15 @@ class _JsonEditorState extends State<JsonEditor> {
             ...currentKeyOrder
                 .where((key) => obj.containsKey(key))
                 .map((key) => ObjectKeyEditor(
-                      key: ValueKey(path.join('/') + '/' + key),
                       initialKey: key,
                       value: obj[key],
                       path: path,
                       jsonData: jsonData,
                       onKeyChanged: (oldKey, newKey) {
+                        FocusScope.of(context).requestFocus(_emptyFocusNode);
                         // 先检查新键是否已存在
                         if (obj.containsKey(newKey)) {
+                          ScaffoldMessenger.of(context).removeCurrentSnackBar();
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
                               content: Text(
@@ -452,212 +457,6 @@ class _JsonEditorState extends State<JsonEditor> {
           ),
         ],
       ],
-    );
-  }
-}
-
-class StringEditor extends StatefulWidget {
-  final String value;
-  final ValueChanged<String> onChanged;
-
-  const StringEditor({
-    Key? key,
-    required this.value,
-    required this.onChanged,
-  }) : super(key: key);
-
-  @override
-  State<StringEditor> createState() => _StringEditorState();
-}
-
-class _StringEditorState extends State<StringEditor> {
-  late TextEditingController _controller;
-  late FocusNode _focusNode;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.value);
-    _controller.selection =
-        TextSelection.collapsed(offset: widget.value.length);
-    _controller.addListener(_handleTextChange);
-    _focusNode = FocusNode();
-
-    // 添加焦点监听器来调试焦点状态
-    _focusNode.addListener(() {
-      print('Focus state changed: ${_focusNode.hasFocus}');
-    });
-  }
-
-  @override
-  void didUpdateWidget(StringEditor oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.value != _controller.text) {
-      _controller.text = widget.value;
-      _controller.selection =
-          TextSelection.collapsed(offset: widget.value.length);
-    }
-  }
-
-  void _handleTextChange() {
-    if (_controller.text != widget.value) {
-      widget.onChanged(_controller.text);
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.removeListener(_handleTextChange);
-    _controller.dispose();
-    _focusNode.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      child: TextField(
-        controller: _controller,
-        focusNode: _focusNode,
-        decoration: const InputDecoration(
-          border: OutlineInputBorder(),
-          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        ),
-        onTap: () {
-          print('onTap');
-          //delay 100ms to ensure the focusNode is focused
-          Future.delayed(const Duration(milliseconds: 200), () {
-            _focusNode.requestFocus();
-          });
-        },
-      ),
-    );
-  }
-}
-
-class ObjectKeyEditor extends StatefulWidget {
-  final String initialKey;
-  final dynamic value;
-  final List<String> path;
-  final Function(String oldKey, String newKey) onKeyChanged;
-  final VoidCallback onDeletePressed;
-  final Widget Function(dynamic value, List<String> path) buildTypeSelector;
-  final Widget Function(dynamic value, List<String> path) renderValue;
-  final Map<String, dynamic> jsonData;
-
-  const ObjectKeyEditor({
-    Key? key,
-    required this.initialKey,
-    required this.value,
-    required this.path,
-    required this.onKeyChanged,
-    required this.onDeletePressed,
-    required this.buildTypeSelector,
-    required this.renderValue,
-    required this.jsonData,
-  }) : super(key: key);
-
-  @override
-  State<ObjectKeyEditor> createState() => _ObjectKeyEditorState();
-}
-
-class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
-  late TextEditingController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = TextEditingController(text: widget.initialKey);
-  }
-
-  @override
-  void didUpdateWidget(ObjectKeyEditor oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.initialKey != oldWidget.initialKey) {
-      _controller.text = widget.initialKey;
-    }
-  }
-
-  void _updateKey(String newKey) {
-    if (newKey != widget.initialKey) {
-      // 检查新的 key 是否已经存在
-      final parentObject = _getParentObject();
-      if (parentObject != null && parentObject.containsKey(newKey)) {
-        // 如果 key 已存在，恢复原来的 key 并显示错误提示
-        _controller.text = widget.initialKey;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context)!.duplicateKey),
-            backgroundColor: Theme.of(context).colorScheme.error,
-          ),
-        );
-        return;
-      }
-      widget.onKeyChanged(widget.initialKey, newKey);
-    }
-  }
-
-  Map<String, dynamic>? _getParentObject() {
-    dynamic current = widget.path.isEmpty
-        ? null
-        : widget.path.fold<dynamic>(
-            widget.jsonData, (obj, key) => obj is Map ? obj[key] : null);
-    return current is Map<String, dynamic> ? current : null;
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                flex: 2,
-                child: TextFormField(
-                  controller: _controller,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.key,
-                    border: const OutlineInputBorder(),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  ),
-                  onFieldSubmitted: _updateKey,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 3,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: widget.renderValue(
-                          widget.value, [...widget.path, widget.initialKey]),
-                    ),
-                    const SizedBox(width: 8),
-                    widget.buildTypeSelector(
-                        widget.value, [...widget.path, widget.initialKey]),
-                    IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: widget.onDeletePressed,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
