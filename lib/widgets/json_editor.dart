@@ -193,24 +193,9 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   Widget renderString(String value, List<String> path) {
-    // Create a controller and initialize it with the current value
-    final controller = TextEditingController(text: value);
-    controller.selection = TextSelection.collapsed(offset: value.length);
-
-    // Add a listener to update the value when the controller changes
-    controller.addListener(() {
-      if (controller.text != value) {
-        updateValue(path, controller.text);
-      }
-    });
-
-    return TextFormField(
-      controller: controller,
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      ),
-      // Remove onChanged since we're using the controller listener
+    return StringEditor(
+      value: value,
+      onChanged: (newValue) => updateValue(path, newValue),
     );
   }
 
@@ -470,6 +455,67 @@ class _JsonEditorState extends State<JsonEditor> {
           ),
         ],
       ],
+    );
+  }
+}
+
+class StringEditor extends StatefulWidget {
+  final String value;
+  final ValueChanged<String> onChanged;
+
+  const StringEditor({
+    Key? key,
+    required this.value,
+    required this.onChanged,
+  }) : super(key: key);
+
+  @override
+  State<StringEditor> createState() => _StringEditorState();
+}
+
+class _StringEditorState extends State<StringEditor> {
+  late TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.value);
+    _controller.selection =
+        TextSelection.collapsed(offset: widget.value.length);
+    _controller.addListener(_handleTextChange);
+  }
+
+  @override
+  void didUpdateWidget(StringEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != _controller.text) {
+      _controller.text = widget.value;
+      _controller.selection =
+          TextSelection.collapsed(offset: widget.value.length);
+    }
+  }
+
+  void _handleTextChange() {
+    if (_controller.text != widget.value) {
+      widget.onChanged(_controller.text);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_handleTextChange);
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: _controller,
+      decoration: const InputDecoration(
+        border: OutlineInputBorder(),
+        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
     );
   }
 }
