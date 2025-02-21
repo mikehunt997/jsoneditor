@@ -12,5 +12,6 @@
     "typeArray": "Array",
     "typeObject": "Object",
     "typeNull": "Null",
-    "invalidJson": "Invalid JSON format"
+    "invalidJson": "Invalid JSON format",
+    "duplicateKey": "Key already exists"
 }

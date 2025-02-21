@@ -12,5 +12,6 @@
     "typeArray": "数组",
     "typeObject": "对象",
     "typeNull": "空值",
-    "invalidJson": "JSON 格式无效"
+    "invalidJson": "JSON 格式无效",
+    "duplicateKey": "键名已存在"
 }

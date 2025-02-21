@@ -21,6 +21,7 @@ class JsonEditor extends StatefulWidget {
 
 class _JsonEditorState extends State<JsonEditor> {
   late Map<String, dynamic> jsonData;
+  late List<String> _keyOrder;
   final TextEditingController _jsonController = TextEditingController();
   final FocusNode _jsonFocusNode = FocusNode();
 
@@ -28,6 +29,7 @@ class _JsonEditorState extends State<JsonEditor> {
   void initState() {
     super.initState();
     jsonData = Map<String, dynamic>.from(widget.initialValue);
+    _keyOrder = List<String>.from(jsonData.keys);
     _updateJsonString();
     _jsonFocusNode.addListener(() {
       if (!_jsonFocusNode.hasFocus) {
@@ -53,6 +55,7 @@ class _JsonEditorState extends State<JsonEditor> {
       final newData = json.decode(jsonString) as Map<String, dynamic>;
       setState(() {
         jsonData = newData;
+        _keyOrder = List<String>.from(newData.keys);
         widget.onChanged?.call(jsonData);
       });
       ScaffoldMessenger.of(context).removeCurrentSnackBar();
@@ -237,29 +240,56 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   Widget renderObject(Map<String, dynamic> obj, List<String> path) {
+    final currentKeyOrder =
+        path.isEmpty ? _keyOrder : List<String>.from(obj.keys);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...obj.entries
-                .map((entry) => ObjectKeyEditor(
-                      key: ValueKey(path.join('/') + '/' + entry.key),
-                      initialKey: entry.key,
-                      value: entry.value,
+            ...currentKeyOrder
+                .where((key) => obj.containsKey(key))
+                .map((key) => ObjectKeyEditor(
+                      key: ValueKey(path.join('/') + '/' + key),
+                      initialKey: key,
+                      value: obj[key],
                       path: path,
+                      jsonData: jsonData,
                       onKeyChanged: (oldKey, newKey) {
+                        // 先检查新键是否已存在
+                        if (obj.containsKey(newKey)) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(
+                                  AppLocalizations.of(context)!.duplicateKey),
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.error,
+                            ),
+                          );
+                          return;
+                        }
+
                         setState(() {
                           final value = obj.remove(oldKey);
                           obj[newKey] = value;
+                          if (path.isEmpty) {
+                            final index = _keyOrder.indexOf(oldKey);
+                            if (index != -1) {
+                              _keyOrder[index] = newKey;
+                            }
+                          }
                           widget.onChanged?.call(jsonData);
                           _updateJsonString();
                         });
                       },
                       onDeletePressed: () {
                         setState(() {
-                          obj.remove(entry.key);
+                          obj.remove(key);
+                          if (path.isEmpty) {
+                            _keyOrder.remove(key);
+                          }
                           widget.onChanged?.call(jsonData);
                           _updateJsonString();
                         });
@@ -271,7 +301,22 @@ class _JsonEditorState extends State<JsonEditor> {
             ElevatedButton(
               onPressed: () {
                 setState(() {
+                  // 检查空 key 是否已存在
+                  if (obj.containsKey('')) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content:
+                            Text(AppLocalizations.of(context)!.duplicateKey),
+                        backgroundColor: Theme.of(context).colorScheme.error,
+                      ),
+                    );
+                    return;
+                  }
+
                   obj[''] = '';
+                  if (path.isEmpty) {
+                    _keyOrder.add('');
+                  }
                   widget.onChanged?.call(jsonData);
                 });
               },
@@ -498,6 +543,7 @@ class ObjectKeyEditor extends StatefulWidget {
   final VoidCallback onDeletePressed;
   final Widget Function(dynamic value, List<String> path) buildTypeSelector;
   final Widget Function(dynamic value, List<String> path) renderValue;
+  final Map<String, dynamic> jsonData;
 
   const ObjectKeyEditor({
     Key? key,
@@ -508,6 +554,7 @@ class ObjectKeyEditor extends StatefulWidget {
     required this.onDeletePressed,
     required this.buildTypeSelector,
     required this.renderValue,
+    required this.jsonData,
   }) : super(key: key);
 
   @override
@@ -542,8 +589,29 @@ class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
 
   void _updateKey(String newKey) {
     if (newKey != widget.initialKey) {
+      // 检查新的 key 是否已经存在
+      final parentObject = _getParentObject();
+      if (parentObject != null && parentObject.containsKey(newKey)) {
+        // 如果 key 已存在，恢复原来的 key 并显示错误提示
+        _controller.text = widget.initialKey;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context)!.duplicateKey),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+        return;
+      }
       widget.onKeyChanged(widget.initialKey, newKey);
     }
+  }
+
+  Map<String, dynamic>? _getParentObject() {
+    dynamic current = widget.path.isEmpty
+        ? null
+        : widget.path.fold<dynamic>(
+            widget.jsonData, (obj, key) => obj is Map ? obj[key] : null);
+    return current is Map<String, dynamic> ? current : null;
   }
 
   @override
