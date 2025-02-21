@@ -563,14 +563,11 @@ class ObjectKeyEditor extends StatefulWidget {
 
 class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
   late TextEditingController _controller;
-  late FocusNode _focusNode;
 
   @override
   void initState() {
     super.initState();
     _controller = TextEditingController(text: widget.initialKey);
-    _focusNode = FocusNode();
-    _focusNode.addListener(_handleFocusChange);
   }
 
   @override
@@ -578,12 +575,6 @@ class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
     super.didUpdateWidget(oldWidget);
     if (widget.initialKey != oldWidget.initialKey) {
       _controller.text = widget.initialKey;
-    }
-  }
-
-  void _handleFocusChange() {
-    if (!_focusNode.hasFocus) {
-      _updateKey(_controller.text);
     }
   }
 
@@ -617,8 +608,7 @@ class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
   @override
   void dispose() {
     _controller.dispose();
-    _focusNode.removeListener(_handleFocusChange);
-    _focusNode.dispose();
+
     super.dispose();
   }
 
@@ -634,22 +624,15 @@ class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
             children: [
               Expanded(
                 flex: 2,
-                child: FocusScope(
-                  child: TextFormField(
-                    controller: _controller,
-                    focusNode: _focusNode,
-                    decoration: InputDecoration(
-                      labelText: AppLocalizations.of(context)!.key,
-                      border: const OutlineInputBorder(),
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                    ),
-                    onTap: () {
-                      FocusScope.of(context).requestFocus();
-                      _focusNode.requestFocus();
-                    },
-                    onFieldSubmitted: _updateKey,
+                child: TextFormField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.key,
+                    border: const OutlineInputBorder(),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   ),
+                  onFieldSubmitted: _updateKey,
                 ),
               ),
               const SizedBox(width: 8),
