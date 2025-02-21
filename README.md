@@ -4,9 +4,6 @@ A Flutter JSON editor
 
 Edit JSON fields easily with a user-friendly interface.
 
-## Known Issues
-
-⚠️ When deleting fields, the JSON string is not being updated properly.
 
 ## Features
 
