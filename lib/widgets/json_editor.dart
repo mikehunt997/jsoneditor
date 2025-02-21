@@ -164,7 +164,7 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   Widget renderValue(dynamic value, List<String> path) {
-    print('renderValue: $value ${path.join('/')}');
+    // print('renderValue: $value ${path.join('/')}');
     if (value == null) {
       return renderNull(path);
     }
@@ -194,6 +194,7 @@ class _JsonEditorState extends State<JsonEditor> {
 
   Widget renderString(String value, List<String> path) {
     return StringEditor(
+      key: ValueKey(path.join('/')),
       value: value,
       onChanged: (newValue) => updateValue(path, newValue),
     );
@@ -426,6 +427,7 @@ class StringEditor extends StatefulWidget {
 
 class _StringEditorState extends State<StringEditor> {
   late TextEditingController _controller;
+  late FocusNode _focusNode;
 
   @override
   void initState() {
@@ -434,6 +436,12 @@ class _StringEditorState extends State<StringEditor> {
     _controller.selection =
         TextSelection.collapsed(offset: widget.value.length);
     _controller.addListener(_handleTextChange);
+    _focusNode = FocusNode();
+
+    // 添加焦点监听器来调试焦点状态
+    _focusNode.addListener(() {
+      print('Focus state changed: ${_focusNode.hasFocus}');
+    });
   }
 
   @override
@@ -456,16 +464,27 @@ class _StringEditorState extends State<StringEditor> {
   void dispose() {
     _controller.removeListener(_handleTextChange);
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextFormField(
-      controller: _controller,
-      decoration: const InputDecoration(
-        border: OutlineInputBorder(),
-        contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+    return GestureDetector(
+      child: TextField(
+        controller: _controller,
+        focusNode: _focusNode,
+        decoration: const InputDecoration(
+          border: OutlineInputBorder(),
+          contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        ),
+        onTap: () {
+          print('onTap');
+          //delay 100ms to ensure the focusNode is focused
+          Future.delayed(const Duration(milliseconds: 200), () {
+            _focusNode.requestFocus();
+          });
+        },
       ),
     );
   }
@@ -547,16 +566,22 @@ class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
             children: [
               Expanded(
                 flex: 2,
-                child: TextFormField(
-                  controller: _controller,
-                  focusNode: _focusNode,
-                  decoration: InputDecoration(
-                    labelText: AppLocalizations.of(context)!.key,
-                    border: const OutlineInputBorder(),
-                    contentPadding:
-                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                child: FocusScope(
+                  child: TextFormField(
+                    controller: _controller,
+                    focusNode: _focusNode,
+                    decoration: InputDecoration(
+                      labelText: AppLocalizations.of(context)!.key,
+                      border: const OutlineInputBorder(),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                    ),
+                    onTap: () {
+                      FocusScope.of(context).requestFocus();
+                      _focusNode.requestFocus();
+                    },
+                    onFieldSubmitted: _updateKey,
                   ),
-                  onFieldSubmitted: _updateKey,
                 ),
               ),
               const SizedBox(width: 8),
