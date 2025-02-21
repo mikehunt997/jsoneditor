@@ -22,17 +22,24 @@ class JsonEditor extends StatefulWidget {
 class _JsonEditorState extends State<JsonEditor> {
   late Map<String, dynamic> jsonData;
   final TextEditingController _jsonController = TextEditingController();
+  final FocusNode _jsonFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
     jsonData = Map<String, dynamic>.from(widget.initialValue);
     _updateJsonString();
+    _jsonFocusNode.addListener(() {
+      if (!_jsonFocusNode.hasFocus) {
+        _updateJsonFromString(_jsonController.text);
+      }
+    });
   }
 
   @override
   void dispose() {
     _jsonController.dispose();
+    _jsonFocusNode.dispose();
     super.dispose();
   }
 
@@ -41,6 +48,7 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   void _updateJsonFromString(String jsonString) {
+    print('updateJsonFromString: $jsonString');
     try {
       final newData = json.decode(jsonString) as Map<String, dynamic>;
       setState(() {
@@ -156,6 +164,7 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   Widget renderValue(dynamic value, List<String> path) {
+    print('renderValue: $value ${path.join('/')}');
     if (value == null) {
       return renderNull(path);
     }
@@ -184,13 +193,24 @@ class _JsonEditorState extends State<JsonEditor> {
   }
 
   Widget renderString(String value, List<String> path) {
+    // Create a controller and initialize it with the current value
+    final controller = TextEditingController(text: value);
+    controller.selection = TextSelection.collapsed(offset: value.length);
+
+    // Add a listener to update the value when the controller changes
+    controller.addListener(() {
+      if (controller.text != value) {
+        updateValue(path, controller.text);
+      }
+    });
+
     return TextFormField(
-      initialValue: value,
+      controller: controller,
       decoration: const InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       ),
-      onChanged: (newValue) => updateValue(path, newValue),
+      // Remove onChanged since we're using the controller listener
     );
   }
 
@@ -436,6 +456,7 @@ class _JsonEditorState extends State<JsonEditor> {
                 ),
                 const SizedBox(height: 8),
                 TextField(
+                  focusNode: _jsonFocusNode,
                   controller: _jsonController,
                   maxLines: 5,
                   decoration: const InputDecoration(
