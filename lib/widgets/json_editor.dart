@@ -47,7 +47,19 @@ class _JsonEditorState extends State<JsonEditor> {
         jsonData = newData;
         widget.onChanged?.call(jsonData);
       });
+      ScaffoldMessenger.of(context).removeCurrentSnackBar();
     } catch (e) {
+      if (mounted && context.mounted) {
+        //remove the previous snackbar
+        ScaffoldMessenger.of(context).removeCurrentSnackBar();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            duration: const Duration(seconds: 5),
+            content: Text(AppLocalizations.of(context)!.invalidJson),
+            backgroundColor: Theme.of(context).colorScheme.error,
+          ),
+        );
+      }
       print('Invalid JSON: $e');
     }
   }

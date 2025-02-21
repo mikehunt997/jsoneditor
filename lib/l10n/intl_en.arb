@@ -11,5 +11,6 @@
     "typeBoolean": "Boolean",
     "typeArray": "Array",
     "typeObject": "Object",
-    "typeNull": "Null"
+    "typeNull": "Null",
+    "invalidJson": "Invalid JSON format"
 }
