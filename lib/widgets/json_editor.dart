@@ -305,24 +305,26 @@ class _JsonEditorState extends State<JsonEditor> {
                 .toList(),
             ElevatedButton(
               onPressed: () {
-                setState(() {
-                  // 检查空 key 是否已存在
-                  if (obj.containsKey('')) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content:
-                            Text(AppLocalizations.of(context)!.duplicateKey),
-                        backgroundColor: Theme.of(context).colorScheme.error,
-                      ),
-                    );
-                    return;
-                  }
+                // 生成一个新的唯一键名
+                var newKey = '';
+                var counter = 1;
+                while (obj.containsKey(newKey)) {
+                  newKey = 'field$counter';
+                  counter++;
+                }
 
-                  obj[''] = '';
+                setState(() {
+                  obj[newKey] = '';
                   if (path.isEmpty) {
-                    _keyOrder.add('');
+                    _keyOrder.add(newKey);
                   }
                   widget.onChanged?.call(jsonData);
+                  _updateJsonString();
+                });
+
+                // 延迟一帧后聚焦到空焦点，以避免键盘弹出
+                Future.microtask(() {
+                  FocusScope.of(context).requestFocus(_emptyFocusNode);
                 });
               },
               child: Text(AppLocalizations.of(context)!.addField),
