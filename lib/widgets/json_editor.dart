@@ -242,80 +242,31 @@ class _JsonEditorState extends State<JsonEditor> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ...obj.entries.map((entry) {
-              final focusNode = FocusNode();
-              final controller = TextEditingController(text: entry.key);
-
-              void updateKey(String newKey) {
-                if (newKey != entry.key) {
-                  setState(() {
-                    final value = obj.remove(entry.key);
-                    obj[newKey] = value;
-                    widget.onChanged?.call(jsonData);
-                    _updateJsonString();
-                  });
-                }
-              }
-
-              focusNode.addListener(() {
-                if (!focusNode.hasFocus) {
-                  updateKey(controller.text);
-                }
-              });
-
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 2,
-                          child: TextFormField(
-                            controller: controller,
-                            focusNode: focusNode,
-                            decoration: InputDecoration(
-                              labelText: AppLocalizations.of(context)!.key,
-                              border: const OutlineInputBorder(),
-                              contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                            ),
-                            onFieldSubmitted: updateKey,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          flex: 3,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: renderValue(
-                                    entry.value, [...path, entry.key]),
-                              ),
-                              const SizedBox(width: 8),
-                              buildTypeSelector(
-                                  entry.value, [...path, entry.key]),
-                              IconButton(
-                                icon: const Icon(Icons.delete),
-                                onPressed: () {
-                                  setState(() {
-                                    obj.remove(entry.key);
-                                    widget.onChanged?.call(jsonData);
-                                    _updateJsonString();
-                                  });
-                                },
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              );
-            }).toList(),
+            ...obj.entries
+                .map((entry) => ObjectKeyEditor(
+                      key: ValueKey(path.join('/') + '/' + entry.key),
+                      initialKey: entry.key,
+                      value: entry.value,
+                      path: path,
+                      onKeyChanged: (oldKey, newKey) {
+                        setState(() {
+                          final value = obj.remove(oldKey);
+                          obj[newKey] = value;
+                          widget.onChanged?.call(jsonData);
+                          _updateJsonString();
+                        });
+                      },
+                      onDeletePressed: () {
+                        setState(() {
+                          obj.remove(entry.key);
+                          widget.onChanged?.call(jsonData);
+                          _updateJsonString();
+                        });
+                      },
+                      buildTypeSelector: buildTypeSelector,
+                      renderValue: renderValue,
+                    ))
+                .toList(),
             ElevatedButton(
               onPressed: () {
                 setState(() {
@@ -515,6 +466,121 @@ class _StringEditorState extends State<StringEditor> {
       decoration: const InputDecoration(
         border: OutlineInputBorder(),
         contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
+    );
+  }
+}
+
+class ObjectKeyEditor extends StatefulWidget {
+  final String initialKey;
+  final dynamic value;
+  final List<String> path;
+  final Function(String oldKey, String newKey) onKeyChanged;
+  final VoidCallback onDeletePressed;
+  final Widget Function(dynamic value, List<String> path) buildTypeSelector;
+  final Widget Function(dynamic value, List<String> path) renderValue;
+
+  const ObjectKeyEditor({
+    Key? key,
+    required this.initialKey,
+    required this.value,
+    required this.path,
+    required this.onKeyChanged,
+    required this.onDeletePressed,
+    required this.buildTypeSelector,
+    required this.renderValue,
+  }) : super(key: key);
+
+  @override
+  State<ObjectKeyEditor> createState() => _ObjectKeyEditorState();
+}
+
+class _ObjectKeyEditorState extends State<ObjectKeyEditor> {
+  late TextEditingController _controller;
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialKey);
+    _focusNode = FocusNode();
+    _focusNode.addListener(_handleFocusChange);
+  }
+
+  @override
+  void didUpdateWidget(ObjectKeyEditor oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialKey != oldWidget.initialKey) {
+      _controller.text = widget.initialKey;
+    }
+  }
+
+  void _handleFocusChange() {
+    if (!_focusNode.hasFocus) {
+      _updateKey(_controller.text);
+    }
+  }
+
+  void _updateKey(String newKey) {
+    if (newKey != widget.initialKey) {
+      widget.onKeyChanged(widget.initialKey, newKey);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _focusNode.removeListener(_handleFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: _controller,
+                  focusNode: _focusNode,
+                  decoration: InputDecoration(
+                    labelText: AppLocalizations.of(context)!.key,
+                    border: const OutlineInputBorder(),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  ),
+                  onFieldSubmitted: _updateKey,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                flex: 3,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: widget.renderValue(
+                          widget.value, [...widget.path, widget.initialKey]),
+                    ),
+                    const SizedBox(width: 8),
+                    widget.buildTypeSelector(
+                        widget.value, [...widget.path, widget.initialKey]),
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: widget.onDeletePressed,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
